@@ -186,6 +186,8 @@ public class XMLConfigurationHelper {
 		
 		Element attributesElement = (Element) parentComponentElement.selectSingleNode("child::attributes");
 		
+		String metadataLine = "METADATA|" + discriminator + "|SourceSystemOwner|SourceSystemId|";
+		
 		List attributeElementsList = attributesElement.selectNodes("child::attribute");
 		Iterator attributeElementsListIterator = attributeElementsList.iterator();
 		while(attributeElementsListIterator.hasNext()) {
