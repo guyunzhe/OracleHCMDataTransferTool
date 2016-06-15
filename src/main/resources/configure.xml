@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<business-objects>
+	<object>
+		<name>Worker</name> 
+		<parent-component>
+			<discriminator>Worker</discriminator>
+			<source-table-reference></source-table-reference> 
+			
+			
+			<source-key>
+				<SourceSystemOwner>STUDENT1</SourceSystemOwner>
+				<SourceSystemId generation-strategy="increment">
+					<prefix>STUDENT1_PER</prefix>
+					<index-generator>
+						<start>100</start>
+						<step>1</step>
+					</<index-generator>
+				</SourceSystemId>
+			</source-key>
+			
+			<attributes>
+				<attribute isPrimaryKey="true"> <!-- default false -->
+					<name>EffectiveStartDate</name>
+					<source-column></source-column>
+				</attribute>
+				<attribute isPrimaryKey="true">
+					<name>EffectiveEndDate</name>
+				</attribute>
+				<attribute isMandatory="true"> <!-- default false-->
+					<name>PersonNumber</name>
+				</attribute>
+				<attribute>
+					<name>ActionCode</name>
+				</attribute>
+				<attribute>
+					<name>StartDate</name>
+				</attribute>
+				<attribute>
+					<name>DateOfBirth</name>
+				</attribute>
+				<attribute>
+					<name>CountryOfBirth</name>
+				</attribute>
+				<attribute>
+					<name>WaiveDataProtectFlag</name>
+				</attribute>
+				<attribute>
+					<name>CategoryCode</name>
+				</attribute>
+				<source-system-reference>
+					<table>SourceRefTableName=PERSON</table>
+					<columns>
+						<attribute>
+							<name>SourceRef001=EMPLID</name>
+						</attribute>
+					</columns>
+				</source-system-reference>
+				<descriptive-flexfields>
+					<code></code>
+					<context name="CH">
+						<attribute isDisplay="false">
+							
+						</attribute>
+					</context>
+				</descriptive-flexfields>
+				<document-attachment>
+					<document-type></document-type>
+					<file></file>
+				</document-attachment>
+			</attributes>
+		</parent-component>
+		
+		<child-components>
+			<component>
+				<parent-discriminator>Worker</parent-discriminator>
+				<discriminator>PersonName</discriminator>
+				
+				<source-key>
+					<SourceSystemOwner></SourceSystemOwner>
+					<SourceSystemId strategy="auto-increment">
+						<prefix>STUDENT1_NAME</prefix>
+						<base>0</base>
+					</SourceSystemId>
+				</source-key>
+				
+				<integration>PersonId(SourceSystemId)</integration>
+				
+				<attributes>
+					<attribute>
+						<name>PhoneType</name>
+					</attribute>
+					<attribute>
+						<name>DateFrom</name>
+					</attribute>
+					<attribute>
+						<name>DateTo</name>
+					</attribute>
+					<attribute>
+						<name>PhoneNumber</name>
+					</attribute>
+					<attribute>
+						<name>CountryCodeNumber</name>
+					</attribute>
+				</attributes>
+			</component>
+		</child-components>
+	</object>
+</business-objects>
