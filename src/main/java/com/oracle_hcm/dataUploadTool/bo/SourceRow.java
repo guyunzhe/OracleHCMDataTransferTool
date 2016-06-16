@@ -18,4 +18,8 @@ public class SourceRow {
 	public void addElement(SourceElement sourceElement) {
 		elements.put(sourceElement.getColumnName(), sourceElement);
 	}
+	
+	public Map<String, SourceElement> getElements() {
+		return this.elements;
+	}
 }

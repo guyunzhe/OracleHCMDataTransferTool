@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +22,7 @@ import org.dom4j.Element;
 import org.dom4j.XPath;
 import org.dom4j.io.SAXReader;
 
+import com.oracle_hcm.dataUploadTool.bo.SourceElement;
 import com.oracle_hcm.dataUploadTool.bo.SourceRow;
 import com.oracle_hcm.dataUploadTool.bo.SourceTable;
 import com.oracle_hcm.dataUploadTool.configure.Directory;
@@ -186,6 +188,21 @@ public class XMLConfigurationHelper {
 		
 		Element attributesElement = (Element) parentComponentElement.selectSingleNode("child::attributes");
 		
+		String metadataLine = "METADATA|" + discriminator + "|SourceSystemOwner|SourceSystemId|";
+		Map<Integer, String> mergeLines = new HashMap<Integer, String>();
+		
+		Iterator<SourceRow> sourceRowsIterator = sourceRows.iterator();
+		while(sourceRowsIterator.hasNext()) {
+			SourceRow sourceRow = sourceRowsIterator.next();
+			int sourceRowIndex = sourceRow.getIndex();
+			String sourceSystemId = identifierGenerator.generateIdentifier(sourceRowIndex);
+			
+			String mergeLine = "MERGE|" + discriminator + "|" + sourceSystemOwner + "|" + sourceSystemId + "|";
+			mergeLines.put(sourceRowIndex, mergeLine);
+		}
+		
+		
+		
 		List attributeElementsList = attributesElement.selectNodes("child::attribute");
 		Iterator attributeElementsListIterator = attributeElementsList.iterator();
 		while(attributeElementsListIterator.hasNext()) {
@@ -195,7 +212,32 @@ public class XMLConfigurationHelper {
 			
 			Element attributeSourceColumnElement = (Element) attributeNameElement.selectSingleNode("child::source-column");
 			String attributeSourceColumn = attributeSourceColumnElement.getText();
+			
+			while(sourceRowsIterator.hasNext()) {
+				SourceRow sourceRow = sourceRowsIterator.next();
+				int sourceRowIndex = sourceRow.getIndex();
+				Map<String, SourceElement> sourceElements = sourceRow.getElements();
+				
+				SourceElement referencedSourceElement = sourceElements.get(attributeSourceColumn);
+				
+				for(int index : mergeLines.keySet()) {
+					if(index == sourceRowIndex) {
+						String mergeLine = mergeLines.get(index);
+						mergeLine += referencedSourceElement.getValue();
+						mergeLine += "|";
+					}
+				}
+			}
+			
+			metadataLine += attributeName;
+			metadataLine += "|";
 		}
+		
+		for(Map.Entry<Integer, String> mergeLineEntry : mergeLines.entrySet()) {
+			String mergeLine = mergeLineEntry.getValue();
+			mergeLine.substring(0, mergeLine.lastIndexOf("|") - 1);
+		}
+		metadataLine.substring(0, metadataLine.lastIndexOf("|") - 1);
 	}
 	
 	private SourceTable iterateSourceTable(String sourceTableName) {
