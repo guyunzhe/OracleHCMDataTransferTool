@@ -19,15 +19,24 @@
 				</SourceSystemId>
 			</source-key>
 			
+			<!--  
+			<source-key>
+				<SourceSystemOwner>STUDENT1</SourceSystemOwner>
+				<SourceSystemId generation-strategy="reference">
+					<source-column></source-column>
+				</SourceSystemId>
+			</source-key>
+			-->
+			
 			<attributes>
-				<attribute isPrimaryKey="true"> <!-- default false -->
+				<attribute>
 					<name>EffectiveStartDate</name>
 					<source-column></source-column>
 				</attribute>
-				<attribute isPrimaryKey="true">
+				<attribute>
 					<name>EffectiveEndDate</name>
 				</attribute>
-				<attribute isMandatory="true"> <!-- default false-->
+				<attribute>
 					<name>PersonNumber</name>
 				</attribute>
 				<attribute>
@@ -75,16 +84,23 @@
 			<component>
 				<parent-discriminator>Worker</parent-discriminator>
 				<discriminator>PersonName</discriminator>
+				<source-table-reference></source-table-reference>
 				
 				<source-key>
 					<SourceSystemOwner></SourceSystemOwner>
-					<SourceSystemId strategy="auto-increment">
+					<SourceSystemId generation-strategy="increment">
 						<prefix>STUDENT1_NAME</prefix>
-						<base>0</base>
+						<index-generator>
+							<start>100</start>
+							<step>1</step>
+						</index-generator>
 					</SourceSystemId>
 				</source-key>
 				
-				<integration>PersonId(SourceSystemId)</integration>
+				<parent-reference>
+					<attribute-name>PersonId(SourceSystemId)</attribute-name>
+					<source-column></source-column>
+				</parent-reference>
 				
 				<attributes>
 					<attribute>
