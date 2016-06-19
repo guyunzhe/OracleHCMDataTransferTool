@@ -137,18 +137,25 @@ public class XMLConfigurationHelper {
 		
 		Element parentComponentElement = (Element) businessObject.selectSingleNode("child::parent-component");
 		
-		buildParentComponentData(printStream, parentComponentElement);
+		buildComponentData(printStream, parentComponentElement, true);
+		
+		Element childComponentsElement = (Element) businessObject.selectSingleNode("child::child-components");
+		List childComponents = childComponentsElement.selectNodes("child::component");
+		Iterator childComponentsIterator = childComponents.iterator();
+		while(childComponentsIterator.hasNext()) {
+			Element childComponent = (Element) childComponentsIterator.next();
+		}
 	}
 	
-	private void buildParentComponentData(PrintStream printStream, Element parentComponentElement) {
-		Element discriminatorElement = (Element) parentComponentElement.selectSingleNode("child::discriminator");
+	private void buildComponentData(PrintStream printStream, Element componentElement, Boolean isTopLevel) {
+		Element discriminatorElement = (Element) componentElement.selectSingleNode("child::discriminator");
 		
 		//1. business object name
 		String discriminator = discriminatorElement.getText();
 		
 		generateComment(printStream, discriminator);
 		
-		Element sourceTableReferenceElement = (Element) parentComponentElement.selectSingleNode("child::source-table-reference");
+		Element sourceTableReferenceElement = (Element) componentElement.selectSingleNode("child::source-table-reference");
 		if(sourceTableReferenceElement == null) {
 			//TODO 
 		}
@@ -161,7 +168,7 @@ public class XMLConfigurationHelper {
 		}
 		List<SourceRow> sourceRows = sourceTable.getSourceRows();
 		
-		Element sourceKeyElement = (Element) parentComponentElement.selectSingleNode("child::source-key");
+		Element sourceKeyElement = (Element) componentElement.selectSingleNode("child::source-key");
 		Element sourceSystemOwnerElement = (Element) sourceKeyElement.selectSingleNode("child::SourceSystemOwner");
 		
 		//2. sourceSystemOwner
@@ -186,7 +193,7 @@ public class XMLConfigurationHelper {
 			identifierGenerator = new IncrementIdentifierGenerator(Integer.parseInt(start), Integer.parseInt(step), prefix);
 		}
 		
-		Element attributesElement = (Element) parentComponentElement.selectSingleNode("child::attributes");
+		Element attributesElement = (Element) componentElement.selectSingleNode("child::attributes");
 		
 		String metadataLine = "METADATA|" + discriminator + "|SourceSystemOwner|SourceSystemId|";
 		Map<Integer, String> mergeLines = new HashMap<Integer, String>();
@@ -201,7 +208,17 @@ public class XMLConfigurationHelper {
 			mergeLines.put(sourceRowIndex, mergeLine);
 		}
 		
-		
+		if(isTopLevel == false) {
+			Element parentReferenceElement = (Element) componentElement.selectSingleNode("child::parent-reference");
+			Element attributeNameElement = (Element) parentReferenceElement.selectSingleNode("child::attribute-name");
+			Element sourceColumnElement = (Element) parentReferenceElement.selectSingleNode("child::source-column");
+			
+			metadataLine += attributeNameElement;
+			
+			for(int index : mergeLines.keySet()) {
+				
+			}
+		}
 		
 		List attributeElementsList = attributesElement.selectNodes("child::attribute");
 		Iterator attributeElementsListIterator = attributeElementsList.iterator();
@@ -220,11 +237,15 @@ public class XMLConfigurationHelper {
 				
 				SourceElement referencedSourceElement = sourceElements.get(attributeSourceColumn);
 				
+				
+				
 				for(int index : mergeLines.keySet()) {
 					if(index == sourceRowIndex) {
 						String mergeLine = mergeLines.get(index);
 						mergeLine += referencedSourceElement.getValue();
 						mergeLine += "|";
+						
+						mergeLines.put(index, mergeLine);
 					}
 				}
 			}
@@ -234,10 +255,19 @@ public class XMLConfigurationHelper {
 		}
 		
 		for(Map.Entry<Integer, String> mergeLineEntry : mergeLines.entrySet()) {
+			int index = mergeLineEntry.getKey();
 			String mergeLine = mergeLineEntry.getValue();
 			mergeLine.substring(0, mergeLine.lastIndexOf("|") - 1);
+			
+			mergeLines.put(index, mergeLine);
 		}
 		metadataLine.substring(0, metadataLine.lastIndexOf("|") - 1);
+		
+		printStream.println(metadataLine);
+		for(Map.Entry<Integer, String> mergeLineEntry : mergeLines.entrySet()) {
+			String mergeLine = mergeLineEntry.getValue();
+			printStream.println(mergeLine);
+		}
 	}
 	
 	private SourceTable iterateSourceTable(String sourceTableName) {

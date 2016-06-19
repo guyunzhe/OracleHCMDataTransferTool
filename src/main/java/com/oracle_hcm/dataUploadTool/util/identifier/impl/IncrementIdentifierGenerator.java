@@ -69,7 +69,7 @@ public class IncrementIdentifierGenerator implements IdentifierGenerator {
 		this.index += this.step;
 		String identifier = this.prefix + Integer.toString(this.index);
 		
-		identifiers.put(sourceRowIndex, identifier);
+		this.identifiers.put(sourceRowIndex, identifier);
 		return identifier;
 	}
 
