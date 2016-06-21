@@ -5,7 +5,7 @@
 		<name>Worker</name> 
 		<parent-component>
 			<discriminator>Worker</discriminator>
-			<source-table-reference></source-table-reference> 
+			<source-table-reference></source-table-reference> <!-- required -->
 			
 			
 			<source-key>
@@ -82,7 +82,7 @@
 			<component>
 				<parent-discriminator>Worker</parent-discriminator>
 				<discriminator>PersonName</discriminator>
-				<source-table-reference></source-table-reference>
+				<source-table-reference></source-table-reference> <!-- optional -->
 				
 				<source-key>
 					<SourceSystemOwner></SourceSystemOwner>

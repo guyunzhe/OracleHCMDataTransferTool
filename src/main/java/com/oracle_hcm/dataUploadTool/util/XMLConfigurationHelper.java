@@ -155,14 +155,53 @@ public class XMLConfigurationHelper {
 		Element discriminatorElement = (Element) componentElement.selectSingleNode("child::discriminator");
 		String discriminator = discriminatorElement.getText();
 		
+		Element sourceTableReferenceElement = null;
+		Element parentDiscriminatorElement = (Element) componentElement.selectSingleNode("child::parent-discriminator");
+		if(parentDiscriminatorElement == null) {
+			/*
+			 * Without parent discriminator, parent component
+			 * the source table reference attribute is required
+			 * */
+			sourceTableReferenceElement = (Element) componentElement.selectSingleNode("child::source-table-reference");
+			if(sourceTableReferenceElement == null) {
+				//if the parent component don't have a source table reference
+				//TODO throw an exception
+			}
+		}else{
+			/*
+			 * With parent discriminator, child component
+			 * the source table reference attribute is optional
+			 * */
+			sourceTableReferenceElement = (Element) componentElement.selectSingleNode("child::source-table-reference");
+			
+			String parentDiscriminator = parentDiscriminatorElement.getText();
+			
+			/*
+			 * Without source table reference
+			 * */
+			if(sourceTableReferenceElement == null) {
+				//use its parents' source table reference
+				@SuppressWarnings("rawtypes")
+				List parentComponentsElement = componentElement.getParent().getParent().selectNodes("child::*");
+				@SuppressWarnings("rawtypes")
+				Iterator parentComponentsElementIterator = parentComponentsElement.iterator();
+				
+				Element parentComponentElement = null;
+				while(parentComponentsElementIterator.hasNext()) {
+					parentComponentElement = (Element) parentComponentsElementIterator.next();
+					Element parentComponentDiscriminatorElement = (Element) parentComponentElement.selectSingleNode("child::discriminator");
+					String parentComponentDiscriminator = parentComponentDiscriminatorElement.getText();
+					if(StringUtils.equals(parentDiscriminator, parentComponentDiscriminator)) {
+						sourceTableReferenceElement = (Element) parentComponentElement.selectSingleNode("child::source-table-reference");
+					}
+				}
+			}
+		}
+		
 		printStream.println("COMMENT ##############################################################################");
 		printStream.println("COMMENT Business Entity :" + discriminator);
 		printStream.println("COMMENT ##############################################################################");
-		
-		Element sourceTableReferenceElement = (Element) componentElement.selectSingleNode("child::source-table-reference");
-		if(sourceTableReferenceElement == null) {
-			//TODO 
-		}
+
 		String sourceTableName = sourceTableReferenceElement.getText();
 		//default source table for the component
 		SourceTable sourceTable = iterateSourceTable(sourceTableName);
