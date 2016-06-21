@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -17,9 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.dom4j.Attribute;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
-import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
-import org.dom4j.XPath;
 import org.dom4j.io.SAXReader;
 
 import com.oracle_hcm.dataUploadTool.bo.SourceElement;
@@ -140,112 +137,127 @@ public class XMLConfigurationHelper {
 		buildComponentData(printStream, parentComponentElement, true);
 		
 		Element childComponentsElement = (Element) businessObject.selectSingleNode("child::child-components");
+		@SuppressWarnings("rawtypes")
 		List childComponents = childComponentsElement.selectNodes("child::component");
+		@SuppressWarnings("rawtypes")
 		Iterator childComponentsIterator = childComponents.iterator();
 		while(childComponentsIterator.hasNext()) {
 			Element childComponent = (Element) childComponentsIterator.next();
+			buildComponentData(printStream, childComponent);
 		}
+	}
+	
+	private void buildComponentData(PrintStream printStream, Element componentElement) {
+		buildComponentData(printStream, componentElement, false);
 	}
 	
 	private void buildComponentData(PrintStream printStream, Element componentElement, Boolean isTopLevel) {
 		Element discriminatorElement = (Element) componentElement.selectSingleNode("child::discriminator");
-		
-		//1. business object name
 		String discriminator = discriminatorElement.getText();
 		
-		generateComment(printStream, discriminator);
+		printStream.println("COMMENT ##############################################################################");
+		printStream.println("COMMENT Business Entity :" + discriminator);
+		printStream.println("COMMENT ##############################################################################");
 		
 		Element sourceTableReferenceElement = (Element) componentElement.selectSingleNode("child::source-table-reference");
 		if(sourceTableReferenceElement == null) {
 			//TODO 
 		}
 		String sourceTableName = sourceTableReferenceElement.getText();
-		
 		//default source table for the component
 		SourceTable sourceTable = iterateSourceTable(sourceTableName);
 		if(sourceTable == null) {
 			//TODO 
 		}
 		List<SourceRow> sourceRows = sourceTable.getSourceRows();
+		Iterator<SourceRow> sourceRowsIterator = sourceRows.iterator();
 		
 		Element sourceKeyElement = (Element) componentElement.selectSingleNode("child::source-key");
-		Element sourceSystemOwnerElement = (Element) sourceKeyElement.selectSingleNode("child::SourceSystemOwner");
 		
-		//2. sourceSystemOwner
-		String sourceSystemOwner = sourceSystemOwnerElement.getText();
-		
-		//3. source key generator
-		IdentifierGenerator identifierGenerator = null;
-		
-		Element sourceSystemIdElement = (Element) sourceKeyElement.selectSingleNode("child::SourceSystemId");
-		Attribute generationStrategyAttribute = sourceSystemIdElement.attribute("generation-strategy");
-		if(generationStrategyAttribute == null || generationStrategyAttribute.getValue().equals("increment")) {
-			Element prefixElement = (Element) sourceSystemIdElement.selectSingleNode("child::prefix");
-			String prefix = prefixElement.getText();
-			
-			Element indexGeneratorElement = (Element) sourceSystemIdElement.selectSingleNode("child::index-generator");
-			Element startElement = (Element) indexGeneratorElement.selectSingleNode("child::start");
-			Element stepElement = (Element) indexGeneratorElement.selectSingleNode("child::step");
-			
-			String start = startElement.getText();
-			String step = stepElement.getText();
-			
-			identifierGenerator = new IncrementIdentifierGenerator(Integer.parseInt(start), Integer.parseInt(step), prefix);
-		}
-		
-		Element attributesElement = (Element) componentElement.selectSingleNode("child::attributes");
-		
+		//Metadata line
 		String metadataLine = "METADATA|" + discriminator + "|SourceSystemOwner|SourceSystemId|";
+		//Merge lines
 		Map<Integer, String> mergeLines = new HashMap<Integer, String>();
 		
-		Iterator<SourceRow> sourceRowsIterator = sourceRows.iterator();
-		while(sourceRowsIterator.hasNext()) {
-			SourceRow sourceRow = sourceRowsIterator.next();
-			int sourceRowIndex = sourceRow.getIndex();
-			String sourceSystemId = identifierGenerator.generateIdentifier(sourceRowIndex);
-			
-			String mergeLine = "MERGE|" + discriminator + "|" + sourceSystemOwner + "|" + sourceSystemId + "|";
-			mergeLines.put(sourceRowIndex, mergeLine);
-		}
+		generateSourceKey(discriminator, sourceKeyElement, mergeLines, sourceRows);
 		
 		if(isTopLevel == false) {
+//			<parent-reference>
+//				<attribute-name></attribute-name>
+//				<source-column></source-column>
+//			</parent-reference>
 			Element parentReferenceElement = (Element) componentElement.selectSingleNode("child::parent-reference");
 			Element attributeNameElement = (Element) parentReferenceElement.selectSingleNode("child::attribute-name");
-			Element sourceColumnElement = (Element) parentReferenceElement.selectSingleNode("child::source-column");
-			
-			metadataLine += attributeNameElement;
-			
-			for(int index : mergeLines.keySet()) {
-				
-			}
-		}
-		
-		List attributeElementsList = attributesElement.selectNodes("child::attribute");
-		Iterator attributeElementsListIterator = attributeElementsList.iterator();
-		while(attributeElementsListIterator.hasNext()) {
-			Element attributeElement = (Element) attributeElementsListIterator.next();
-			Element attributeNameElement = (Element) attributeElement.selectSingleNode("child::name");
+			//parent reference attribute name
 			String attributeName = attributeNameElement.getText();
+			Element sourceColumnElement = (Element) parentReferenceElement.selectSingleNode("child::source-column");
+			//referenced source column
+			String sourceColumn = sourceColumnElement.getText();
 			
-			Element attributeSourceColumnElement = (Element) attributeNameElement.selectSingleNode("child::source-column");
-			String attributeSourceColumn = attributeSourceColumnElement.getText();
+			metadataLine += attributeName;
 			
 			while(sourceRowsIterator.hasNext()) {
 				SourceRow sourceRow = sourceRowsIterator.next();
 				int sourceRowIndex = sourceRow.getIndex();
 				Map<String, SourceElement> sourceElements = sourceRow.getElements();
 				
-				SourceElement referencedSourceElement = sourceElements.get(attributeSourceColumn);
-				
-				
+				SourceElement referencedSourceElement = sourceElements.get(sourceColumn);
 				
 				for(int index : mergeLines.keySet()) {
 					if(index == sourceRowIndex) {
-						String mergeLine = mergeLines.get(index);
-						mergeLine += referencedSourceElement.getValue();
-						mergeLine += "|";
+//						String mergeLine = mergeLines.get(index);
+//						mergeLine += referencedSourceElement.getValue();
+//						mergeLine += "|";
 						
-						mergeLines.put(index, mergeLine);
+						mergeLines.put(index, mergeLines.get(index) + referencedSourceElement.getValue() + "|");
+					}
+				}
+			}
+		}
+		
+		//attributes collection
+		Element attributesElement = (Element) componentElement.selectSingleNode("child::attributes");
+		@SuppressWarnings("rawtypes")
+		List attributeElementsList = attributesElement.selectNodes("child::attribute");
+		@SuppressWarnings("rawtypes")
+		Iterator attributeElementsListIterator = attributeElementsList.iterator();
+		/*
+		 * Iterate every attribute of the component
+		 * */
+		while(attributeElementsListIterator.hasNext()) {
+//			<attribute>
+//				<name></name>
+//				<source-column></source-column>
+//				<source-table-reference></source-table-reference> <!-- optional -->
+//			</attribute>
+			Element attributeElement = (Element) attributeElementsListIterator.next();
+			Element attributeNameElement = (Element) attributeElement.selectSingleNode("child::name");
+			//name
+			String attributeName = attributeNameElement.getText();
+			
+			Element attributeSourceColumnElement = (Element) attributeElement.selectSingleNode("child::source-column");
+			//source column
+			String attributeSourceColumn = attributeSourceColumnElement.getText();
+			
+			/*
+			 * Get all the referenced values for the given attribute by iterating 
+			 * all the source table rows within the specific <code>attributeSourceColumn</code>
+			 * */
+			while(sourceRowsIterator.hasNext()) {
+				SourceRow sourceRow = sourceRowsIterator.next();
+				int sourceRowIndex = sourceRow.getIndex();
+				Map<String, SourceElement> sourceElements = sourceRow.getElements();
+				
+				//source element got by the <code>attributeSourceColumn</code> for each row
+				SourceElement referencedSourceElement = sourceElements.get(attributeSourceColumn);
+				
+				for(int index : mergeLines.keySet()) {
+					if(index == sourceRowIndex) {
+//						String mergeLine = mergeLines.get(index);
+//						mergeLine += referencedSourceElement.getValue();
+//						mergeLine += "|";
+						
+						mergeLines.put(index, mergeLines.get(index) + referencedSourceElement.getValue() + "|");
 					}
 				}
 			}
@@ -257,9 +269,8 @@ public class XMLConfigurationHelper {
 		for(Map.Entry<Integer, String> mergeLineEntry : mergeLines.entrySet()) {
 			int index = mergeLineEntry.getKey();
 			String mergeLine = mergeLineEntry.getValue();
-			mergeLine.substring(0, mergeLine.lastIndexOf("|") - 1);
 			
-			mergeLines.put(index, mergeLine);
+			mergeLines.put(index, mergeLine.substring(0, mergeLine.lastIndexOf("|") - 1));
 		}
 		metadataLine.substring(0, metadataLine.lastIndexOf("|") - 1);
 		
@@ -270,6 +281,68 @@ public class XMLConfigurationHelper {
 		}
 	}
 	
+	private void generateSourceKey(String discriminator, Element sourceKeyElement, 
+			Map<Integer, String> mergeLines, List<SourceRow> sourceRows) {
+		Element sourceSystemOwnerElement = (Element) sourceKeyElement.selectSingleNode("child::SourceSystemOwner");
+		String sourceSystemOwner = sourceSystemOwnerElement.getText();
+		
+		Element sourceSystemIdElement = (Element) sourceKeyElement.selectSingleNode("child::SourceSystemId");
+		Attribute generationStrategyAttribute = sourceSystemIdElement.attribute("generation-strategy");
+		if(generationStrategyAttribute == null || generationStrategyAttribute.getValue().equals("reference")) {
+//			<source-key>
+//				<SourceSystemOwner>STUDENT1</SourceSystemOwner>
+//				<SourceSystemId generation-strategy="increment">
+//					<prefix>STUDENT1_PER</prefix>
+//					<index-generator>
+//						<start>100</start>
+//						<step>1</step>
+//					</index-generator>
+//				</SourceSystemId>
+//			</source-key>
+			Element sourceColumnElement = (Element) sourceSystemIdElement.selectSingleNode("source-column");
+			String sourceColumn = sourceColumnElement.getText();
+			
+			Iterator<SourceRow> sourceRowsIterator = sourceRows.iterator();
+			while(sourceRowsIterator.hasNext()) {
+				SourceRow sourceRow = sourceRowsIterator.next();
+				int sourceRowIndex = sourceRow.getIndex();
+				Map<String, SourceElement> sourceElements = sourceRow.getElements();
+				
+				SourceElement referencedSourceElement = sourceElements.get(sourceColumn);
+				String mergeLine = "MERGE|" + discriminator + "|" + sourceSystemOwner + "|" + referencedSourceElement.getValue() + "|";
+				mergeLines.put(sourceRowIndex, mergeLine);
+			}
+		}else if(generationStrategyAttribute.getValue().equals("increment")) {
+//			<source-key>
+//				<SourceSystemOwner>STUDENT1</SourceSystemOwner>
+//				<SourceSystemId generation-strategy="reference">
+//					<source-column></source-column>
+//				</SourceSystemId>
+//			</source-key>
+			Element prefixElement = (Element) sourceSystemIdElement.selectSingleNode("child::prefix");
+			String prefix = prefixElement.getText();
+			
+			Element indexGeneratorElement = (Element) sourceSystemIdElement.selectSingleNode("child::index-generator");
+			Element startElement = (Element) indexGeneratorElement.selectSingleNode("child::start");
+			Element stepElement = (Element) indexGeneratorElement.selectSingleNode("child::step");
+			
+			String start = startElement.getText();
+			String step = stepElement.getText();
+			
+			IdentifierGenerator identifierGenerator = new IncrementIdentifierGenerator(Integer.parseInt(start), Integer.parseInt(step), prefix);
+			
+			Iterator<SourceRow> sourceRowsIterator = sourceRows.iterator();
+			while(sourceRowsIterator.hasNext()) {
+				SourceRow sourceRow = sourceRowsIterator.next();
+				int sourceRowIndex = sourceRow.getIndex();
+				String sourceSystemId = identifierGenerator.generateIdentifier(sourceRowIndex);
+				
+				String mergeLine = "MERGE|" + discriminator + "|" + sourceSystemOwner + "|" + sourceSystemId + "|";
+				mergeLines.put(sourceRowIndex, mergeLine);
+			}
+		}
+	}
+	
 	private SourceTable iterateSourceTable(String sourceTableName) {
 		for(String key : this.sourceTables.keySet()) {
 			if(StringUtils.equals(key, sourceTableName)) {
@@ -277,11 +350,5 @@ public class XMLConfigurationHelper {
 			}
 		}
 		return null;
-	}
-	
-	private void generateComment(PrintStream printStream, String discriminator) {
-		printStream.println("COMMENT ##############################################################################");
-		printStream.println("COMMENT Business Entity :" + discriminator);
-		printStream.println("COMMENT ##############################################################################");
 	}
 }

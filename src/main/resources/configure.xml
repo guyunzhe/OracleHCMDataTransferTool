@@ -19,14 +19,12 @@
 				</SourceSystemId>
 			</source-key>
 			
-			<!--  
 			<source-key>
 				<SourceSystemOwner>STUDENT1</SourceSystemOwner>
 				<SourceSystemId generation-strategy="reference">
 					<source-column></source-column>
 				</SourceSystemId>
 			</source-key>
-			-->
 			
 			<attributes>
 				<attribute>
