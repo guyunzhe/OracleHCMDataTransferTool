@@ -5,7 +5,7 @@
 		<name>Worker</name> 
 		<parent-component>
 			<discriminator>Worker</discriminator>
-			<source-table-reference></source-table-reference> 
+			<source-table-reference></source-table-reference> <!-- required -->
 			
 			
 			<source-key>
@@ -19,19 +19,21 @@
 				</SourceSystemId>
 			</source-key>
 			
-			<!--  
 			<source-key>
 				<SourceSystemOwner>STUDENT1</SourceSystemOwner>
 				<SourceSystemId generation-strategy="reference">
 					<source-column></source-column>
 				</SourceSystemId>
 			</source-key>
-			-->
 			
 			<attributes>
 				<attribute>
 					<name>EffectiveStartDate</name>
 					<source-column></source-column>
+					<foreign-reference>
+						<source-table-reference></source-table-reference>
+						<source-column></source-column>
+					</foreign-reference>
 				</attribute>
 				<attribute>
 					<name>EffectiveEndDate</name>
@@ -82,9 +84,9 @@
 		
 		<child-components>
 			<component>
-				<parent-discriminator>Worker</parent-discriminator>
+				<parent-discriminator>Worker</parent-discriminator> <!-- required -->
 				<discriminator>PersonName</discriminator>
-				<source-table-reference></source-table-reference>
+				<source-table-reference></source-table-reference> <!-- optional -->
 				
 				<source-key>
 					<SourceSystemOwner></SourceSystemOwner>
