@@ -7,16 +7,24 @@ public class DirectoryServiceImpl implements DirectoryService {
 	private String sourceDirectory;
 	private String targetDiractory;
 	
+	private static DirectoryService directoryService = new DirectoryServiceImpl();
+	private DirectoryServiceImpl() {}
+	public static DirectoryService getInstance(String sourceDirectory, String targetDiractory) {
+		directoryService.setSourceDirectory(sourceDirectory);
+		directoryService.setTargetDiractory(targetDiractory);
+		return directoryService;
+	}
 	
-	
+	public void setSourceDirectory(String sourceDirectory) {
+		this.sourceDirectory = sourceDirectory;
+	}
+	public void setTargetDiractory(String targetDiractory) {
+		this.targetDiractory = targetDiractory;
+	}
 	public String getSourceDirectory() {
-		// TODO Auto-generated method stub
-		return null;
+		return this.sourceDirectory;
 	}
-
 	public String getTargetDirectory() {
-		// TODO Auto-generated method stub
-		return null;
+		return this.targetDiractory;
 	}
-
 }
