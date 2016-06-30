@@ -1,10 +1,9 @@
 package com.oracle_hcm.dataUploadTool.service;
 
 import java.io.File;
-import java.util.Set;
+import java.util.Map;
 
 public interface SourceDataReader {
 
-	Set<File> read(String directory);
-	File read(String directory, String fileName);
+	Map<String, File> readData();
 }

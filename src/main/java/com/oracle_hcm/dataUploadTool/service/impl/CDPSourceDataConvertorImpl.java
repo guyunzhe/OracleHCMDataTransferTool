@@ -2,49 +2,52 @@ package com.oracle_hcm.dataUploadTool.service.impl;
 
 import java.io.File;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import com.oracle_hcm.dataUploadTool.bo.SourceTable;
+import com.oracle_hcm.dataUploadTool.exceptions.FileOperationException;
 import com.oracle_hcm.dataUploadTool.service.ExcelDataReader;
 import com.oracle_hcm.dataUploadTool.service.SourceDataConvertor;
+import com.oracle_hcm.dataUploadTool.service.SourceDataReader;
 
+@Component
 public class CDPSourceDataConvertorImpl implements SourceDataConvertor {
-	
-	private final Logger logger = Logger.getLogger(CDPSourceDataConvertorImpl.class);
-	
-	public Map<String, SourceTable> convert(Set<File> sourceFiles) {
+
+	private SourceDataReader sourceDataReader;
+	private ExcelDataReader excelDataReader;
+
+	@Autowired
+	public CDPSourceDataConvertorImpl(SourceDataReader sourceDataReader, ExcelDataReader excelDataReader) {
+		this.sourceDataReader = sourceDataReader;
+		this.excelDataReader = excelDataReader;
+	}
+
+	public Map<String, SourceTable> convertData() {
 		Map<String, SourceTable> sourceTableMap = new HashMap<String, SourceTable>();
 
-		Iterator<File> sourceFilesIterator = sourceFiles.iterator();
-		while(sourceFilesIterator.hasNext()) {
-			File sourceFile = sourceFilesIterator.next();
+		Map<String, File> sourceFiles = this.sourceDataReader.readData();
+		for(String fileName : sourceFiles.keySet()) {
+			File sourceFile = sourceFiles.get(fileName);
 			String ext = FilenameUtils.getExtension(sourceFile.getAbsolutePath());
 			if(StringUtils.isEmpty(ext)) {
-				logger.error(String.format("The file(%s) dose not have a suffix", sourceFile.getPath()));
-				//TODO throw new RuntimeException
+				throw new FileOperationException("C00000", "Missing extention of the source file");
 			}
-			
-			Set<SourceTable> sourceTables = null;
-			ExcelDataReader excelDataReader = new ExcelDataReaderImpl();
+
+			Map<String, SourceTable> sourceTables = null;
 			if(ext.equals("xls")) {
-				sourceTables = excelDataReader.readXLS(sourceFile);
+				sourceTables = this.excelDataReader.readXLS(sourceFile);
 			}else if(ext.equals("xlsx")) {
-				sourceTables = excelDataReader.readXLSX(sourceFile);
+				sourceTables = this.excelDataReader.readXLSX(sourceFile);
+			}else{
+				throw new FileOperationException("C00001", "Unsupported file extention");
 			}
-			
-			Iterator<SourceTable> sourceTableIterator = sourceTables.iterator();
-			while(sourceTableIterator.hasNext()) {
-				SourceTable sourceTable = sourceTableIterator.next();
-				sourceTableMap.put(sourceTable.getName(), sourceTable);
-			}
+			sourceTableMap.putAll(sourceTables);
 		}
 		return sourceTableMap;
 	}
-
 }
