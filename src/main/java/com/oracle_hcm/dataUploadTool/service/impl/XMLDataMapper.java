@@ -285,7 +285,7 @@ public class XMLDataMapper implements DataMapper {
 					throw new DataMappingOperationException("000002", 
 							"Cannot find any segment in " + field.getPath());
 				}
-
+				
 				@SuppressWarnings("rawtypes")
 				Iterator segmentsIterator = segments.iterator();
 				while(segmentsIterator.hasNext()) {
@@ -501,17 +501,22 @@ public class XMLDataMapper implements DataMapper {
 			Map<String, SourceElement> sourceElements = sourceRow.getElements();
 			SourceElement sourceElement = sourceElements.get(sourceColumn.getTextTrim());
 			List<String> mergeValues = mergeValueSet.get(i);
-
-			//Context information --> FLEX:<descriptive flexfield code>
-			String contextValue = mergeValues.get(metadataValues.indexOf(codeValue));
-			if(StringUtils.isEmpty(contextValue)) {
-				mergeValues.add(metadataValues.indexOf(flexfieldMetadata), 
-						sourceElement.getValue());
+			
+			if(mergeValues.get(metadataValues.indexOf(codeValue)) == null) {
 				mergeValues.add(metadataValues.indexOf(codeValue), context.getTextTrim());
-			}else if(StringUtils.equals(contextValue, context.getTextTrim())){
-				mergeValues.add(metadataValues.indexOf(flexfieldMetadata), 
-						sourceElement.getValue());
 			}
+			mergeValues.add(metadataValues.indexOf(flexfieldMetadata), 
+					sourceElement.getValue());
+			//Context information --> FLEX:<descriptive flexfield code>
+//			String contextValue = mergeValues.get(metadataValues.indexOf(codeValue) - 1);
+//			if(StringUtils.isEmpty(contextValue)) {
+//				mergeValues.add(metadataValues.indexOf(flexfieldMetadata), 
+//						sourceElement.getValue());
+//				mergeValues.add(metadataValues.indexOf(codeValue), context.getTextTrim());
+//			}else if(StringUtils.equals(contextValue, context.getTextTrim())){
+//				mergeValues.add(metadataValues.indexOf(flexfieldMetadata), 
+//						sourceElement.getValue());
+//			}
 		}
 	}
 
