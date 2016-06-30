@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd">
+
+	<!-- 
+		Annotations are a nice feature but by themselves they do nothing whatsoever. 
+		They just annotate stuff. 
+		You need a processing tool to find the annotations and do something with them.
+		<context:annotation-config> comes to the rescue. 
+		This activates the actions for the annotations that it finds on the beans defined 
+		in the same application context where itself is defined.
+	-->
+	<context:annotation-config/>
+
+	<bean id="bBean" class="com.stackoverflow.spring.framework.example1.xxx.B"/>
+	<bean id="cBean" class="com.stackoverflow.spring.framework.example1.xxx.C"/>
+	<bean id="aBean" class="com.stackoverflow.spring.framework.example1.yyy.A1"/>
+</beans>

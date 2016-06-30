@@ -3,15 +3,19 @@ package com.oracle_hcm.dataUploadTool.util;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+
+import com.oracle_hcm.dataUploadTool.exceptions.FileOperationException;
 
 public class FileOperationUtils {
 
@@ -40,6 +44,31 @@ public class FileOperationUtils {
 
 	public static Set<File> searchFile(File directory, String fileName) {
 		return searchFile(directory, fileName, false);
+	}
+
+	public static File searchSingleFile(File directory, String fileName, String fileExtention) {
+		if(!directory.exists()) {
+			createDirectory(directory.getPath());
+		}
+		File[] files = directory.listFiles();
+		if(files != null) {
+			if(ArrayUtils.isNotEmpty(files)) {
+				List<File> fileList = Arrays.asList(files);
+				Iterator<File> fileIterator = fileList.iterator();
+				while(fileIterator.hasNext()) {
+					File file = fileIterator.next();
+					if(file.isFile()) {
+						String extention = FilenameUtils.getExtension(file.getName());
+						String name = FilenameUtils.removeExtension(file.getName());
+						if(name.equals(fileName) && extention.equals(fileExtention)) {
+							return file;
+						}
+					}
+				}
+			}
+		}
+
+		return null;
 	}
 
 	/**
@@ -86,7 +115,7 @@ public class FileOperationUtils {
 		return searchedFiles;
 	}
 
-	public static Set<File> searchAllFiles(File directory) {
+	public static Map<String, File> searchAllFiles(File directory) {
 		return searchAllFiles(directory, false);
 	}
 	
@@ -94,10 +123,9 @@ public class FileOperationUtils {
 	/**
 	 * Query all the files from the directory
 	 * @param directory  the directory where to search all the files
-	 * @return the set of files
 	 * */
-	public static Set<File> searchAllFiles(File directory, boolean recursive) {
-		Set<File> allFiles = new HashSet<File>();
+	public static Map<String, File> searchAllFiles(File directory, boolean recursive) {
+		Map<String, File> allFiles = new HashMap<String, File>();
 
 		File[] files = directory.listFiles();
 		if(files != null) {
@@ -108,10 +136,12 @@ public class FileOperationUtils {
 					File file = fileIterator.next();
 					if(file.isFile()) {
 						logger.info(String.format("The file searched: %s", file.getPath()));
-						allFiles.add(file);
+						
+						//TODO avoid duplicate key
+						allFiles.put(file.getName(), file);
 					}else if(file.isDirectory()) {
 						if(recursive) {
-							allFiles.addAll(searchAllFiles(file, true));
+							allFiles.putAll(searchAllFiles(file, recursive));
 						}
 					}
 				}
@@ -154,28 +184,23 @@ public class FileOperationUtils {
 
 	public static void createDirectory(String path, boolean recursive) {
 		boolean success = false;
-
 		if(StringUtils.isEmpty(path)) {
-			logger.warn("Unable to create the directory(The path is null)");
-			return;
+			throw new FileOperationException("A00000", "The path is empty");
 		}
 
 		File directory = new File(path);
 		if(directory.exists()) {
-			logger.info(String.format("The path(%s) has already been created", directory.getPath()));
 			return;
 		}
-
 		if(recursive) {
 			success = directory.mkdirs();
 		}else{
 			success = directory.mkdir();
 		}
-
-		if(success) {
-			logger.info(String.format("The directory(%s) was created successfully", directory.getPath()));
+		if(!success) {
+			throw new FileOperationException("A00001", "Failed to create the directory");
 		}else{
-			logger.error(String.format("The directory(%s) was created with error", directory.getPath()));
+			System.out.println("The directory " + path + " was created successfully");
 		}
 	}
 

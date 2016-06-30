@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd">
+
+	<!-- 
+		The <context:annotation-config/> only works on beans registered 
+		within the application context. If I removed the XML configuration 
+		for the three beans there is no bean created and 
+		<context:annotation-config/> has no "targets" to work on. 
+
+		But that won't be a problem for <context:component-scan> 
+		which can scan a package for "targets" to work on.
+	-->
+	<context:annotation-config/> <!-- Optional: <context:annotation-config/> can be omitted if <context:component-scan> is specified -->
+
+	<context:component-scan base-package="com.stackoverflow.spring.framework.example1.xxx, 
+		com.stackoverflow.spring.framework.example1.yyy"/>
+	<!-- 
+		<context:component-scan base-package="com.stackoverflow.spring.framework.example1.xxx"/>
+		<bean id="aBean" class="com.stackoverflow.spring.framework.example1.yyy.A2"/>
+	 -->
+</beans>

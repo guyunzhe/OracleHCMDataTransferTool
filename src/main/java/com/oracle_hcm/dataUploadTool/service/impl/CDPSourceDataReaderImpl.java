@@ -1,39 +1,39 @@
 package com.oracle_hcm.dataUploadTool.service.impl;
 
 import java.io.File;
-import java.util.Set;
+import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+import com.oracle_hcm.dataUploadTool.exceptions.SourceDataReadException;
+import com.oracle_hcm.dataUploadTool.service.DirectoryService;
 import com.oracle_hcm.dataUploadTool.service.SourceDataReader;
 import com.oracle_hcm.dataUploadTool.util.FileOperationUtils;
 
+@Component
 public class CDPSourceDataReaderImpl implements SourceDataReader {
-	
-	private final Logger logger = Logger.getLogger(CDPSourceDataReaderImpl.class);
-	
-	public Set<File> read(String directory) {
-		File exportedDirectory = new File(directory);
+
+	final private DirectoryService directoryService;
+
+	@Autowired
+	public CDPSourceDataReaderImpl(DirectoryService directoryService) {
+		this.directoryService = directoryService;
+	}
+
+	public Map<String, File> readData() {
+		String sourceDirectory = this.directoryService.getSourceDirectory();
+		File exportedDirectory = new File(sourceDirectory);
 		if(!exportedDirectory.exists()) {
 			String exportedPath = exportedDirectory.getPath();
-			logger.error(String.format("The directory(%s) dose not exist", exportedPath));
-
 			FileOperationUtils.createDirectory(exportedPath);
-			logger.info(String.format("The directory(%s) has been created", exportedPath));
-			
-			//TODO throw new RuntimeException
+			throw new SourceDataReadException("B00000", "The source directory does not exist");
 		}
-		Set<File> sourceFiles = FileOperationUtils.searchAllFiles(exportedDirectory, true);
-		if(sourceFiles == null || sourceFiles.isEmpty()) {
-			//TODO throw new RuntimeException
+
+		Map<String, File> sourceFiles = FileOperationUtils.searchAllFiles(exportedDirectory, true);
+		if(sourceFiles.isEmpty()) {
+			throw new SourceDataReadException("B00001", "There is no source data file in the source directory");
 		}
-		
 		return sourceFiles;
 	}
-
-	public File read(String directory, String fileName) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 }

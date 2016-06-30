@@ -1,7 +1,7 @@
 package com.oracle_hcm.dataUploadTool.service;
 
 import java.io.File;
-import java.util.Set;
+import java.util.Map;
 
 import com.oracle_hcm.dataUploadTool.bo.SourceTable;
 
@@ -13,7 +13,7 @@ public interface ExcelDataReader {
 	 * @param sourceFile  the source file from which the data are read
 	 * @return the source data model
 	 * */
-	Set<SourceTable> readXLS(File sourceFile);
+	Map<String, SourceTable> readXLS(File sourceFile);
 
 	/**
 	 * Read data from excel files with the extension - xlsx
@@ -21,5 +21,5 @@ public interface ExcelDataReader {
 	 * @param sourceFile  the source file from which the data are read
 	 * @return the source data model
 	 * */
-	Set<SourceTable> readXLSX(File sourceFile);
+	Map<String, SourceTable> readXLSX(File sourceFile);
 }

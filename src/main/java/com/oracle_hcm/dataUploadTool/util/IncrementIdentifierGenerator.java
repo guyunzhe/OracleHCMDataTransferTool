@@ -1,21 +1,15 @@
-package com.oracle_hcm.dataUploadTool.util.identifier.impl;
+package com.oracle_hcm.dataUploadTool.util;
 
-import java.util.HashMap;
-import java.util.Map;
+import org.springframework.stereotype.Component;
 
-import com.oracle_hcm.dataUploadTool.util.identifier.IdentifierGenerator;
+@Component
+public class IncrementIdentifierGenerator {
 
-public class IncrementIdentifierGenerator implements IdentifierGenerator {
-	
 	private int start;
 	private int step;
-	
 	private int index;
-	
 	private String prefix;
-	
-	private Map<Integer, String> identifiers = new HashMap<Integer, String>();
-	
+
 	public int getStart() {
 		return start;
 	}
@@ -57,7 +51,7 @@ public class IncrementIdentifierGenerator implements IdentifierGenerator {
 	public IncrementIdentifierGenerator() {
 		initializeIndex();
 	}
-	
+
 	public IncrementIdentifierGenerator(int start, int step, String prefix) {
 		this.start = start;
 		this.step = step;
@@ -65,15 +59,14 @@ public class IncrementIdentifierGenerator implements IdentifierGenerator {
 		initializeIndex();
 	}
 
-	public String generateIdentifier(int sourceRowIndex) {
+	public String generateIdentifier() {
 		this.index += this.step;
 		String identifier = this.prefix + Integer.toString(this.index);
-		
-		this.identifiers.put(sourceRowIndex, identifier);
+
 		return identifier;
 	}
 
-	private void initializeIndex() {
+	public void initializeIndex() {
 		this.index = this.start;
 	}
 }
