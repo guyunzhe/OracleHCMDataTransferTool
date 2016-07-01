@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<business-objects>
+	<object>
+		<name>A</name> 
+		<component topLevel="true">
+			<discriminator>A</discriminator>
+			<source-table-reference>A</source-table-reference>
+			
+			<!-- <source-key>
+				<SourceSystemOwner>STUDENT1</SourceSystemOwner>
+				<SourceSystemId generation-strategy="increment">
+					<prefix>STUDENT1_PER</prefix>
+					<index-generator>
+						<start>100</start>
+						<step>1</step>
+					</index-generator>
+				</SourceSystemId>
+			</source-key> -->
+			
+			<source-key>
+				<SourceSystemOwner>A00001</SourceSystemOwner>
+				<SourceSystemId generation-strategy="reference">
+					<source-column>Id</source-column>
+				</SourceSystemId>
+			</source-key>
+			
+			<attributes>
+				<attribute>
+					<name>Name1</name>
+					<source-column>Name</source-column>
+				</attribute>
+				<attribute>
+					<name>Age1</name>
+					<source-column>Age</source-column>
+				</attribute>
+				<attribute>
+					<name>Gender1</name>
+					<source-column>Gender</source-column>
+				</attribute>
+				<attribute>
+					<name>Mobile1</name>
+					<source-column>Mobile</source-column>
+				</attribute>
+				<attribute>
+					<name>Email1</name>
+					<source-column>Email</source-column>
+				</attribute>
+			</attributes>
+			
+			<dffs>
+				<field code="_JOB_DEFINITION">
+					<segment>
+						<context>CN</context>
+						<attribute-name>_JOB_LEVEL</attribute-name>
+						<source-column>Job Level CN</source-column>
+					</segment>
+					<segment>
+						<context>AF</context>
+						<attribute-name>_JOB_LEVEL</attribute-name>
+						<source-column>Job Level AF</source-column>
+					</segment>
+					<segment>
+						<context>CN</context>
+						<attribute-name>_POSITION</attribute-name>
+						<source-column>Position CN</source-column>
+					</segment>
+					<segment>
+						<context>CN</context>
+						<attribute-name>_DEPARTMENT</attribute-name>
+						<source-column>Department CN</source-column>
+					</segment>
+					<segment>
+						<context>CN</context>
+						<attribute-name>_SALARY</attribute-name>
+						<source-column>Salary CN</source-column>
+					</segment>
+				</field>
+				<field code="_PERSON_DEFINITION" isLookup="true">
+					<segment>
+						<context>CN</context>
+						<attribute-name>_SCORE_LEVEL</attribute-name>
+						<source-column>Score Level CN</source-column>
+					</segment>
+				</field>
+			</dffs>
+			
+			<eff code="PER_GRADES_DFF" isLookup="true">
+				<segment>
+					<context>Context1</context>
+					<attribute-name>Grade</attribute-name>
+					<source-column>Grade Context1</source-column>
+				</segment>
+			</eff>
+		</component>
+		
+		<component>
+			<parent-discriminator>A</parent-discriminator>
+			<discriminator>B</discriminator>
+			
+			<source-key>
+				<SourceSystemOwner>B00001</SourceSystemOwner>
+				<SourceSystemId generation-strategy="reference">
+					<source-column>Manager Id</source-column>
+				</SourceSystemId>
+			</source-key>
+			
+			<parent-reference>
+				<attribute-name>BID</attribute-name>
+				<source-column>Id</source-column>
+			</parent-reference>
+			
+			<attributes>
+				<attribute>
+					<name>Manager1</name>
+					<source-column>Manager</source-column>
+				</attribute>
+				<attribute>
+					<name>Manager Gender1</name>
+					<source-column>Manager Gender</source-column>
+				</attribute>
+			</attributes>
+		</component>
+		
+		<component>
+			<parent-discriminator>A</parent-discriminator>
+			<discriminator>C</discriminator>
+			<source-table-reference>B</source-table-reference>
+			
+			<source-key>
+				<SourceSystemOwner>C00001</SourceSystemOwner>
+				<SourceSystemId generation-strategy="reference">
+					<source-column>Id</source-column>
+				</SourceSystemId>
+			</source-key>
+			
+			<parent-reference>
+				<attribute-name>BID</attribute-name>
+				<source-column>A_Id</source-column>
+			</parent-reference>
+			
+			<attributes>
+				<attribute>
+					<name>Country1</name>
+					<source-column>Country</source-column>
+				</attribute>
+				<attribute>
+					<name>Province1</name>
+					<source-column>Province</source-column>
+				</attribute>
+				<attribute>
+					<name>County1</name>
+					<source-column>County</source-column>
+				</attribute>
+				<attribute>
+					<name>Town1</name>
+					<source-column>Town</source-column>
+				</attribute>
+				<attribute>
+					<name>Street1</name>
+					<source-column>Street</source-column>
+				</attribute>
+				<attribute>
+					<name>Door1</name>
+					<source-column>Door</source-column>
+				</attribute>
+			</attributes>
+		</component>
+		
+		<component>
+			<parent-discriminator>A</parent-discriminator>
+			<discriminator>S</discriminator>
+			<source-table-reference>Salary</source-table-reference>
+			
+			<source-key>
+				<SourceSystemOwner>S00001</SourceSystemOwner>
+				<SourceSystemId generation-strategy="reference">
+					<source-column>Id</source-column>
+				</SourceSystemId>
+			</source-key>
+			
+			<parent-reference>
+				<attribute-name>SID</attribute-name>
+				<source-column>A_Id</source-column>
+			</parent-reference>
+			
+			<attributes>
+				<attribute>
+					<name>Level1</name>
+					<source-column>level</source-column>
+				</attribute>
+				<attribute>
+					<name>Money1</name>
+					<source-column>money</source-column>
+				</attribute>
+				<attribute>
+					<name>Manager1</name>
+					<source-column>Manager</source-column>
+					<source-table-reference>A</source-table-reference>
+				</attribute>
+				<attribute>
+					<name>Manager Id1</name>
+					<source-column>Manager Id</source-column>
+					<source-table-reference>A</source-table-reference>
+				</attribute>
+				<attribute>
+					<name>Manager Gender1</name>
+					<source-column>Manager Gender</source-column>
+					<source-table-reference>A</source-table-reference>
+				</attribute>
+			</attributes>
+			
+			<dffs>
+				<field code="_JOB_DEFINITION">
+					<segment>
+						<context>CN</context>
+						<attribute-name>_JOB_LEVEL</attribute-name>
+						<source-column>Job Level CN</source-column>
+						<source-table-reference>A</source-table-reference>
+					</segment>
+					<segment>
+						<context>AF</context>
+						<attribute-name>_JOB_LEVEL</attribute-name>
+						<source-column>Job Level AF</source-column>
+						<source-table-reference>A</source-table-reference>
+					</segment>
+					<segment>
+						<context>CN</context>
+						<attribute-name>_POSITION</attribute-name>
+						<source-column>Position CN</source-column>
+						<source-table-reference>A</source-table-reference>
+					</segment>
+					<segment>
+						<context>CN</context>
+						<attribute-name>_DEPARTMENT</attribute-name>
+						<source-column>Department CN</source-column>
+						<source-table-reference>A</source-table-reference>
+					</segment>
+					<segment>
+						<context>CN</context>
+						<attribute-name>_SALARY</attribute-name>
+						<source-column>Salary CN</source-column>
+						<source-table-reference>A</source-table-reference>
+					</segment>
+				</field>
+				<field code="_PERSON_DEFINITION" isLookup="true">
+					<segment>
+						<context>CN</context>
+						<attribute-name>_SCORE_LEVEL</attribute-name>
+						<source-column>Score Level CN</source-column>
+						<source-table-reference>A</source-table-reference>
+					</segment>
+				</field>
+			</dffs>
+			
+			<eff code="PER_GRADES_DFF" isLookup="true">
+				<segment>
+					<context>Context1</context>
+					<attribute-name>Grade</attribute-name>
+					<source-column>Grade Context1</source-column>
+					<source-table-reference>A</source-table-reference>
+				</segment>
+			</eff>
+		</component>
+	</object>
+</business-objects>

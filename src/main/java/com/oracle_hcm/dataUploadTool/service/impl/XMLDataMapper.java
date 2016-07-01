@@ -12,6 +12,7 @@ import java.util.Map;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.dom4j.Attribute;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
@@ -30,8 +31,10 @@ import com.oracle_hcm.dataUploadTool.service.SourceDataConvertor;
 import com.oracle_hcm.dataUploadTool.util.FileOperationUtils;
 import com.oracle_hcm.dataUploadTool.util.IncrementIdentifierGenerator;
 
-@Component
+@Component("XMLDataMapper")
 public class XMLDataMapper implements DataMapper {
+
+	private final static Logger logger = Logger.getLogger(XMLDataMapper.class);
 
 	private SourceDataConvertor sourceDataConvertor;
 	private DirectoryService directoryService;
@@ -54,7 +57,7 @@ public class XMLDataMapper implements DataMapper {
 			e.printStackTrace();
 		}
 		Element root = document.getRootElement();
-		listNodeInfo(root);
+		logNodeInfo(root);
 
 		File targetDirectory = new File(this.directoryService.getTargetDirectory());
 		if(!targetDirectory.exists()) {
@@ -66,7 +69,7 @@ public class XMLDataMapper implements DataMapper {
 		for(@SuppressWarnings("rawtypes") Iterator businessObjectListIterator = businessObjectList.iterator();
 				businessObjectListIterator.hasNext();) {
 			Element businessObject = (Element) businessObjectListIterator.next();
-			listNodeInfo(businessObject);
+			logNodeInfo(businessObject);
 			buildBusinessObject(businessObject);
 		};
 	}
@@ -273,11 +276,8 @@ public class XMLDataMapper implements DataMapper {
 				String codeValue = "FLEX:" + code.getValue();
 				metadataValues.add(codeValue);
 
-				boolean isDisplay = false;
-				Attribute isLookup = field.attribute("isLookup");
-				if(isLookup != null && Boolean.getBoolean(isLookup.getValue()) == true) {
-					isDisplay = true;
-				}
+				setFieldPlaceHolder(sourceRows, metadataValues, mergeValueSet, codeValue);
+				boolean isDisplay = checkLookup(field);
 
 				@SuppressWarnings("rawtypes")
 				List segments = field.selectNodes("segment");
@@ -318,11 +318,8 @@ public class XMLDataMapper implements DataMapper {
 			String codeValue = "FLEX:" + code.getValue();
 			metadataValues.add(codeValue);
 
-			boolean isDisplay = false;
-			Attribute isLookup = extensibleFlexfields.attribute("isLookup");
-			if(isLookup != null && Boolean.getBoolean(isLookup.getValue()) == true) {
-				isDisplay = true;
-			}
+			setFieldPlaceHolder(sourceRows, metadataValues, mergeValueSet, codeValue);
+			boolean isDisplay = checkLookup(extensibleFlexfields);
 
 			@SuppressWarnings("rawtypes")
 			List segments = extensibleFlexfields.selectNodes("segment");
@@ -447,6 +444,8 @@ public class XMLDataMapper implements DataMapper {
 				"(" + code.getValue() + "=" + context.getTextTrim() + ")";
 		metadataValues.add(flexfieldMetadata);
 
+		setFieldPlaceHolder(sourceRows, metadataValues, mergeValueSet, flexfieldMetadata);
+
 		Element sourceTableReference = (Element) segment.
 				selectSingleNode("source-table-reference");
 		if(sourceTableReference != null) {
@@ -478,6 +477,22 @@ public class XMLDataMapper implements DataMapper {
 		}
 	}
 
+	private boolean checkLookup(Element flexfieldSegment) {
+		Attribute isLookup = flexfieldSegment.attribute("isLookup");
+		if(isLookup != null && Boolean.valueOf(isLookup.getValue()) == true) {
+			return true;
+		}
+		return false;
+	}
+
+	private void setFieldPlaceHolder(List<SourceRow> sourceRows, List<String> metadataValues, 
+			List<ArrayList<String>> mergeValueSet, String columnName) {
+		for(int i = 0;i < sourceRows.size();i++) {
+			List<String> mergeValues = mergeValueSet.get(i);
+			mergeValues.add(metadataValues.indexOf(columnName), "#NULL");
+		}
+	}
+
 	private void writeMappingData(List<SourceRow> sourceRows, 
 			Element sourceColumn, List<ArrayList<String>> mergeValueSet) {
 		for(int i = 0;i < sourceRows.size();i++) {
@@ -502,15 +517,15 @@ public class XMLDataMapper implements DataMapper {
 			SourceElement sourceElement = sourceElements.get(sourceColumn.getTextTrim());
 			List<String> mergeValues = mergeValueSet.get(i);
 
-			//Context information --> FLEX:<descriptive flexfield code>
-			String contextValue = mergeValues.get(metadataValues.indexOf(codeValue));
-			if(StringUtils.isEmpty(contextValue)) {
-				mergeValues.add(metadataValues.indexOf(flexfieldMetadata), 
-						sourceElement.getValue());
-				mergeValues.add(metadataValues.indexOf(codeValue), context.getTextTrim());
-			}else if(StringUtils.equals(contextValue, context.getTextTrim())){
-				mergeValues.add(metadataValues.indexOf(flexfieldMetadata), 
-						sourceElement.getValue());
+			String sourceValue = sourceElement.getValue();
+			String flexfieldPlaceHolderValue = mergeValues.get(metadataValues.indexOf(codeValue));
+			if(flexfieldPlaceHolderValue.equals("#NULL") && StringUtils.isNotEmpty(sourceValue)) {
+				mergeValues.set(metadataValues.indexOf(codeValue), context.getTextTrim());
+			}
+			String metadataFieldPlaceHolderValue = mergeValues.get(metadataValues.indexOf(flexfieldMetadata));
+			if(metadataFieldPlaceHolderValue.equals("#NULL")) {
+				//If sourceValue equals null, the field in the dat file will be null
+				mergeValues.set(metadataValues.indexOf(flexfieldMetadata), sourceValue);
 			}
 		}
 	}
@@ -557,27 +572,30 @@ public class XMLDataMapper implements DataMapper {
 	private String getDataLine(List<String> dataValues) {
 		StringBuffer dataLine = new StringBuffer();
 		for(int i = 0;i < dataValues.size();i++) {
-			dataLine.append(dataValues.get(i));
+			String data = dataValues.get(i);
+			if(StringUtils.isEmpty(data)) {
+				dataLine.append("");
+			}else{
+				dataLine.append(dataValues.get(i));
+			}
 			dataLine.append("|");
 		}
 		return dataLine.substring(0, dataLine.lastIndexOf("|"));
 	}
 
-	private void listNodeInfo(Element element) {
-		System.out.println("Name:" + element.getName());
-		System.out.println("Qualified Name:" + element.getQualifiedName());
-		System.out.println("Namespace URI:" + element.getNamespaceURI());
-		System.out.println("Namespace Prefix:" + element.getNamespacePrefix());
-		System.out.println("Path:" + element.getPath());
-		System.out.println("Unique Path:" + element.getUniquePath());
-		System.out.println("Is Root Element:" + element.isRootElement());
-		System.out.println("Is Read Only:" + element.isReadOnly());
-		System.out.println("Is Text Only:" + element.isTextOnly());
-		System.out.println("Node Type:" + element.getNodeType());
-		System.out.println("Node Type Name:" + element.getNodeTypeName());
-		System.out.println("Text Trim:" + element.getTextTrim());
-		System.out.println("To String:" + element.toString());
-		System.out.println("As XML:" + element.asXML());
-		System.out.println("/n");
+	private void logNodeInfo(Element element) {
+		logger.info(String.format("Name:%s", element.getName()));
+		logger.info(String.format("Qualified Name:%s", element.getQualifiedName()));
+		logger.info(String.format("Namespace URI:%s", element.getNamespaceURI()));
+		logger.info(String.format("Namespace Prefix:%s", element.getNamespacePrefix()));
+		logger.info(String.format("Path:%s", element.getPath()));
+		logger.info(String.format("Unique Path:%s", element.getUniquePath()));
+		logger.info(String.format("Is Root Element:%s", element.isRootElement()));
+		logger.info(String.format("Is Read Only:%s", element.isReadOnly()));
+		logger.info(String.format("Is Text Only:%s", element.isTextOnly()));
+		logger.info(String.format("Node Type:%s", element.getNodeType()));
+		logger.info(String.format("Node Type Name:%s", element.getNodeTypeName()));
+		logger.info(String.format("Text Trim:%s", element.getTextTrim()));
+		logger.info(String.format("To String:%s", element.toString()));
 	}
 }

@@ -76,7 +76,8 @@ public class ExcelDataReaderImpl implements ExcelDataReader {
 		return sourceTables;
 	}
 
-	private void transferData(Workbook workbook, String sourceFileName, Map<String, SourceTable> sourceTables) {
+	private void transferData(Workbook workbook, String sourceFileName, 
+			Map<String, SourceTable> sourceTables) {
 		int numberOfSheets = workbook.getNumberOfSheets();
 		for(int sheetIdx = 0;sheetIdx < numberOfSheets;sheetIdx++) {
 			SourceTable sourceTable = new SourceTable();
@@ -88,6 +89,7 @@ public class ExcelDataReaderImpl implements ExcelDataReader {
 				Pattern sheetNamePattern = Pattern.compile("^Sheet\\d+$");
 				Matcher sheetNameMatcher = sheetNamePattern.matcher(sheetName);
 				if(sheetNameMatcher.matches()) {
+					//Skip sheets whose name like Sheet1, Sheet2, ...
 					continue;
 				}else{
 					sourceTable.setName(spreadsheet.getSheetName());
@@ -134,6 +136,7 @@ public class ExcelDataReaderImpl implements ExcelDataReader {
 									columnIndex, cell.getDateCellValue()));
 							sourceElement.setValue(cell.getDateCellValue().toString());
 						}else{
+							//TODO
 							logger.info(String.format("Cell Index:%d Cell value:%f", 
 									columnIndex, cell.getNumericCellValue()));
 							sourceElement.setValue(Double.toString(cell.getNumericCellValue()));
