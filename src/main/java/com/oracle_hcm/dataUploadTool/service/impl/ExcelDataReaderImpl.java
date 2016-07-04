@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -15,6 +16,7 @@ import org.apache.log4j.Logger;
 import org.apache.poi.hssf.usermodel.HSSFDateUtil;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -132,14 +134,17 @@ public class ExcelDataReaderImpl implements ExcelDataReader {
 					switch (cell.getCellType()) {
 					case Cell.CELL_TYPE_NUMERIC:
 						if(HSSFDateUtil.isCellDateFormatted(cell)) {
-							logger.info(String.format("Cell Index:%d Cell value:%T", 
-									columnIndex, cell.getDateCellValue()));
-							sourceElement.setValue(cell.getDateCellValue().toString());
+							SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+							String formattedDate = simpleDateFormat.format(cell.getDateCellValue());
+							logger.info(String.format("Cell Index:%d Cell value:%s", 
+									columnIndex, formattedDate));
+							sourceElement.setValue(formattedDate);
 						}else{
-							//TODO
-							logger.info(String.format("Cell Index:%d Cell value:%f", 
-									columnIndex, cell.getNumericCellValue()));
-							sourceElement.setValue(Double.toString(cell.getNumericCellValue()));
+							DataFormatter dataFormatter = new DataFormatter();
+							String cellValue = dataFormatter.formatCellValue(cell);
+							logger.info(String.format("Cell Index:%d Cell value:%s", 
+									columnIndex, cellValue));
+							sourceElement.setValue(cellValue);
 						}
 						break;
 					case Cell.CELL_TYPE_BOOLEAN:
