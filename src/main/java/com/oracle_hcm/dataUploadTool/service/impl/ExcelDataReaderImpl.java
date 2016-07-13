@@ -111,69 +111,9 @@ public class ExcelDataReaderImpl implements ExcelDataReader {
 						"There is no data in the spread sheet " 
 								+ spreadsheet.getSheetName());
 			}
-			int firstColumnIndex = columnDefinitionRow.getFirstCellNum();
-			int lastColumnIndex = columnDefinitionRow.getLastCellNum();
 
-			for(int rowNum = rowStart + 1;rowNum <= rowEnd;rowNum++) {
-				Row row = spreadsheet.getRow(rowNum);
-				if(row == null) {
-					//Move on to the next data row
-					continue;
-				}
-				SourceRow sourceRow = new SourceRow();
-				sourceRow.setIndex(rowNum);
-
-				for(int columnIndex = firstColumnIndex;columnIndex < lastColumnIndex;columnIndex++) {
-					Cell columnDefinition = columnDefinitionRow.getCell(columnIndex, Row.RETURN_BLANK_AS_NULL);
-					if(columnDefinition == null) {
-						throw new WorkbookOperationException("W00001", "Empty cell in the column definition row");
-					}
-					Cell cell = row.getCell(columnIndex, Row.CREATE_NULL_AS_BLANK);
-
-					SourceElement sourceElement = new SourceElement(rowNum, columnDefinition.getStringCellValue());
-					switch (cell.getCellType()) {
-					case Cell.CELL_TYPE_NUMERIC:
-						if(HSSFDateUtil.isCellDateFormatted(cell)) {
-							SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-							String formattedDate = simpleDateFormat.format(cell.getDateCellValue());
-							logger.info(String.format("Cell Index:%d Cell value:%s", 
-									columnIndex, formattedDate));
-							sourceElement.setValue(formattedDate);
-						}else{
-							DataFormatter dataFormatter = new DataFormatter();
-							String cellValue = dataFormatter.formatCellValue(cell);
-							logger.info(String.format("Cell Index:%d Cell value:%s", 
-									columnIndex, cellValue));
-							sourceElement.setValue(cellValue);
-						}
-						break;
-					case Cell.CELL_TYPE_BOOLEAN:
-						logger.info(String.format("Cell Index:%d Cell value:%b", 
-								columnIndex, cell.getBooleanCellValue()));
-						sourceElement.setValue(String.valueOf(cell.getBooleanCellValue()));
-						break;
-					case Cell.CELL_TYPE_STRING:
-						logger.info(String.format("Cell Index:%d Cell value:%s", 
-								columnIndex, cell.getStringCellValue()));
-						sourceElement.setValue(cell.getStringCellValue());
-						break;
-					case Cell.CELL_TYPE_FORMULA:
-						logger.info(String.format("Cell Index:%d Cell value:%s", 
-								columnIndex, cell.getCellFormula()));
-						sourceElement.setValue(cell.getCellFormula());
-						break;
-					case Cell.CELL_TYPE_BLANK:
-						logger.info("Cell Index:%d Cell value:Null");
-						sourceElement.setValue(null);
-						break;
-					default:
-						logger.info("Cell Index:%d Cell value:Null");
-						sourceElement.setValue(null);
-					}
-					sourceRow.addElement(sourceElement);
-				}
-				sourceTable.addRow(sourceRow);
-			}
+			readDataFromTable(sourceTable, spreadsheet, 
+					columnDefinitionRow, rowStart, rowEnd);
 			sourceTables.put(sourceTable.getName(), sourceTable);
 		}
 
@@ -181,6 +121,84 @@ public class ExcelDataReaderImpl implements ExcelDataReader {
 			workbook.close();
 		} catch (IOException e) {
 			e.printStackTrace();
+		}
+	}
+
+	private void readDataFromTable(SourceTable sourceTable, 
+			Sheet spreadsheet, Row columnDefinitionRow, 
+			int rowStart, int rowEnd) {
+		for(int rowNum = rowStart + 1;rowNum <= rowEnd;rowNum++) {
+			Row row = spreadsheet.getRow(rowNum);
+			if(row == null) {
+				//Move on to the next data row
+				continue;
+			}
+			SourceRow sourceRow = new SourceRow();
+			sourceRow.setIndex(rowNum);
+
+			readDataFromRow(columnDefinitionRow, row, sourceRow);
+			sourceTable.addRow(sourceRow);
+		}
+	}
+
+	private void readDataFromRow(Row columnDefinitionRow, 
+			Row row, SourceRow sourceRow) {
+		for(int columnIndex = columnDefinitionRow.getFirstCellNum();
+				columnIndex < columnDefinitionRow.getLastCellNum();columnIndex++) {
+			Cell columnDefinition = columnDefinitionRow.getCell(columnIndex, 
+					Row.RETURN_BLANK_AS_NULL);
+			if(columnDefinition == null) {
+				throw new WorkbookOperationException("W00001", 
+						"Empty cell in the column definition row");
+			}
+			Cell cell = row.getCell(columnIndex, Row.CREATE_NULL_AS_BLANK);
+			SourceElement sourceElement = new SourceElement(row.getRowNum(),
+					columnDefinition.getStringCellValue());
+
+			readDataFromCell(cell, sourceElement);
+			sourceRow.addElement(sourceElement);
+		}
+	}
+
+	private void readDataFromCell(Cell cell, SourceElement sourceElement) {
+		switch (cell.getCellType()) {
+		case Cell.CELL_TYPE_NUMERIC:
+			if(HSSFDateUtil.isCellDateFormatted(cell)) {
+				SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+				String formattedDate = simpleDateFormat.format(cell.getDateCellValue());
+				logger.info(String.format("Cell Index:%d Cell value:%s", 
+						cell.getColumnIndex(), formattedDate));
+				sourceElement.setValue(formattedDate);
+			}else{
+				DataFormatter dataFormatter = new DataFormatter();
+				String cellValue = dataFormatter.formatCellValue(cell);
+				logger.info(String.format("Cell Index:%d Cell value:%s", 
+						cell.getColumnIndex(), cellValue));
+				sourceElement.setValue(cellValue);
+			}
+			break;
+		case Cell.CELL_TYPE_BOOLEAN:
+			logger.info(String.format("Cell Index:%d Cell value:%b", 
+					cell.getColumnIndex(), cell.getBooleanCellValue()));
+			sourceElement.setValue(String.valueOf(cell.getBooleanCellValue()));
+			break;
+		case Cell.CELL_TYPE_STRING:
+			logger.info(String.format("Cell Index:%d Cell value:%s", 
+					cell.getColumnIndex(), cell.getStringCellValue()));
+			sourceElement.setValue(cell.getStringCellValue());
+			break;
+		case Cell.CELL_TYPE_FORMULA:
+			logger.info(String.format("Cell Index:%d Cell value:%s", 
+					cell.getColumnIndex(), cell.getCellFormula()));
+			sourceElement.setValue(cell.getCellFormula());
+			break;
+		case Cell.CELL_TYPE_BLANK:
+			logger.info("Cell Index:%d Cell value:Null");
+			sourceElement.setValue(null);
+			break;
+		default:
+			logger.info("Cell Index:%d Cell value:Null");
+			sourceElement.setValue(null);
 		}
 	}
 }
