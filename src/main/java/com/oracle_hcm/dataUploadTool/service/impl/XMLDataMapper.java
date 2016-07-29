@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -76,14 +77,18 @@ public class XMLDataMapper implements DataMapper {
 
 	private Document parseWithSAX() throws DocumentException {
 		SAXReader xmlReader = new SAXReader();
-		String mappingConfigurationDirectory = this.directoryService.getMappingConfigurationDirectory();
-		File configurationFile = FileOperationUtils.searchSingleFile(
-				new File(mappingConfigurationDirectory), "mappingConfiguration", "xml");
-		if(configurationFile == null) {
-			throw new DataMappingOperationException("G00000", 
-					"Cannot find the mapping configuration file in " + mappingConfigurationDirectory);
+		String mappingConfigurationFile = this.directoryService.getMappingConfigurationFile();
+		if(StringUtils.isEmpty(mappingConfigurationFile)) {
+			throw new DataMappingOperationException("Missing mapping configuration file", 
+					"Cannot find the mapping configuration file");
 		}
-		return xmlReader.read(configurationFile);
+		String ext = FilenameUtils.getExtension(mappingConfigurationFile);
+		if(!StringUtils.equals(ext, "xml")) {
+			throw new DataMappingOperationException("Wrong mapping configuration file format", 
+					"The mapping configuration file " + mappingConfigurationFile + 
+					" is not a xml file.");
+		}
+		return xmlReader.read(new File(mappingConfigurationFile));
 	}
 
 	private void buildBusinessObject(Element businessObject) {
@@ -214,18 +219,20 @@ public class XMLDataMapper implements DataMapper {
 				mergeValues.add(3, sourceElement.getValue());
 			}
 		}else if(generationStrategy.getValue().equals("increment")) {
-			Element prefix = (Element) sourceSystemId.selectSingleNode("prefix");
-			validateTextElement(prefix, "SourceSystemId - prefix");
-			Element indexGenerator = (Element) sourceSystemId.selectSingleNode("index-generator");
-			validateElement(indexGenerator, "SourceSystemId - index-generator");
-			Element start = (Element) indexGenerator.selectSingleNode("start");
-			Element step = (Element) indexGenerator.selectSingleNode("step");
-			validateTextElement(start, "SourceSystemId - index-generator - start");
-			validateTextElement(step, "SourceSystemId - index-generator - step");
+			Element discriminator = (Element) component.selectSingleNode("discriminator");
+			validateTextElement(discriminator, "discriminator");
+//			Element prefix = (Element) sourceSystemId.selectSingleNode("prefix");
+//			validateTextElement(prefix, "SourceSystemId - prefix");
+//			Element indexGenerator = (Element) sourceSystemId.selectSingleNode("index-generator");
+//			validateElement(indexGenerator, "SourceSystemId - index-generator");
+//			Element start = (Element) indexGenerator.selectSingleNode("start");
+//			Element step = (Element) indexGenerator.selectSingleNode("step");
+//			validateTextElement(start, "SourceSystemId - index-generator - start");
+//			validateTextElement(step, "SourceSystemId - index-generator - step");
 
-			incrementIdentifierGenerator.setStart(Integer.parseInt(start.getTextTrim()));
-			incrementIdentifierGenerator.setStep(Integer.parseInt(step.getTextTrim()));
-			incrementIdentifierGenerator.setPrefix(prefix.getTextTrim());
+			incrementIdentifierGenerator.setStart(0);
+			incrementIdentifierGenerator.setStep(1);
+			incrementIdentifierGenerator.setPrefix(discriminator.getTextTrim());
 			incrementIdentifierGenerator.initializeIndex();
 			for(int i = 0;i < sourceRows.size();i++) {
 				List<String> mergeValues = mergeValueSet.get(i);
@@ -239,9 +246,10 @@ public class XMLDataMapper implements DataMapper {
 			List<ArrayList<String>> mergeValueSet, List<SourceRow> sourceRows) {
 		Element parentReference = (Element) component.selectSingleNode("parent-reference");
 		if(parentReference == null) {
-			throw new DataMappingOperationException("N00000", 
-					"The component is not a top level component, "
-					+ "but the parent reference element is missing from the component.");
+			return;
+//			throw new DataMappingOperationException("N00000", 
+//					"The component is not a top level component, "
+//					+ "but the parent reference element is missing from the component.");
 		}
 		Element attributeName = (Element) parentReference.selectSingleNode("attribute-name");
 		Element sourceColumn = (Element) parentReference.selectSingleNode("source-column");
@@ -350,7 +358,8 @@ public class XMLDataMapper implements DataMapper {
 					parentDiscriminator.getPath() + " is empty");
 		}
 
-		Element sourceTableReference = (Element) component.selectSingleNode("source-table-reference");
+		Element sourceTableReference = (Element) component.
+				selectSingleNode("source-table-reference");
 		if(sourceTableReference == null) {
 			Element parentComponent = (Element) component.getParent()
 					.selectSingleNode("child::component[discriminator='" + 
@@ -378,12 +387,16 @@ public class XMLDataMapper implements DataMapper {
 	private void buildAttribute(Element component, List<String> metadataValues, 
 			List<ArrayList<String>> mergeValueSet, List<SourceRow> sourceRows) {
 		Element attributesElement = (Element) component.selectSingleNode("attributes");
-		validateElement(attributesElement, "attributes");
+		if(attributesElement == null) {
+			return;
+		}
+//		validateElement(attributesElement, "attributes");
 		@SuppressWarnings("rawtypes")
 		List attributes = attributesElement.selectNodes("attribute");
 		if(attributes == null) {
 			throw new DataMappingOperationException("I00000", 
-					"There is no attribute defined in the element " + attributesElement.getPath());
+					"There is no attribute defined in the element " + 
+							attributesElement.getPath());
 		}
 		@SuppressWarnings("rawtypes")
 		Iterator attributesIterator = attributes.iterator();
@@ -391,11 +404,39 @@ public class XMLDataMapper implements DataMapper {
 			Element attribute = (Element) attributesIterator.next();
 			Element name = (Element) attribute.selectSingleNode("name");
 			validateTextElement(name, "<name/>");
+
+			metadataValues.add(name.getTextTrim());
+
+			Element fixedValue = (Element) attribute.selectSingleNode("value");
+			if(fixedValue != null) {
+				validateTextElement(fixedValue, "<value/>");
+				for(int i = 0;i < sourceRows.size();i++) {
+					List<String> mergeValues = mergeValueSet.get(i);
+					mergeValues.add(fixedValue.getTextTrim());
+				}
+				continue;
+			}
+
+			//TODO to be tested
+			Element autoGenerateValues = (Element) attribute.selectSingleNode("auto-generate");
+			if(autoGenerateValues != null) {
+				validateTextElement(autoGenerateValues, "<value/>");
+
+				incrementIdentifierGenerator.setStart(0);
+				incrementIdentifierGenerator.setStep(1);
+				incrementIdentifierGenerator.setPrefix(autoGenerateValues.getTextTrim());
+				incrementIdentifierGenerator.initializeIndex();
+				for(int i = 0;i < sourceRows.size();i++) {
+					List<String> mergeValues = mergeValueSet.get(i);
+					mergeValues.add(incrementIdentifierGenerator.generateIdentifier());
+				}
+				continue;
+			}
+
 			Element sourceColumn = (Element) attribute.selectSingleNode("source-column");
 			validateTextElement(sourceColumn, "<source-column/>");
 			prepareSourceTableReference(attribute, sourceColumn, 
 					sourceRows, mergeValueSet);
-			metadataValues.add(name.getTextTrim());
 		}
 	}
 
@@ -437,12 +478,24 @@ public class XMLDataMapper implements DataMapper {
 		Element attributeName = (Element) segment.
 				selectSingleNode("attribute-name");
 		validateTextElement(attributeName, "<attribute-name/>");
-		Element sourceColumn = (Element) segment.selectSingleNode("source-column");
-		validateTextElement(sourceColumn, "<source-column/>");
 
 		String flexfieldMetadata = attributeName.getTextTrim() + (isDisplay?"_Display":"") +
 				"(" + code.getValue() + "=" + context.getTextTrim() + ")";
 		metadataValues.add(flexfieldMetadata);
+
+		//TODO to be tested
+		Element fixedValue = (Element) segment.selectSingleNode("value");
+		if(fixedValue != null) {
+			validateTextElement(fixedValue, "<value/>");
+			for(int i = 0;i < sourceRows.size();i++) {
+				List<String> mergeValues = mergeValueSet.get(i);
+				mergeValues.add(fixedValue.getTextTrim());
+			}
+			return;
+		}
+
+		Element sourceColumn = (Element) segment.selectSingleNode("source-column");
+		validateTextElement(sourceColumn, "<source-column/>");
 
 		setFieldPlaceHolder(sourceRows, metadataValues, mergeValueSet, flexfieldMetadata);
 
@@ -499,6 +552,11 @@ public class XMLDataMapper implements DataMapper {
 			SourceRow sourceRow = sourceRows.get(i);
 			Map<String, SourceElement> sourceElements = sourceRow.getElements();
 			SourceElement sourceElement = sourceElements.get(sourceColumn.getTextTrim());
+			if(sourceElement == null) {
+				throw new DataMappingOperationException("Wrong column name", 
+						"Cannot find the sourceElement by the column name:" + 
+								sourceColumn.getTextTrim());
+			}
 			List<String> mergeValues = mergeValueSet.get(i);
 			mergeValues.add(sourceElement.getValue());
 		}

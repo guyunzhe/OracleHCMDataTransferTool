@@ -11,6 +11,7 @@
 		<config>src/test/resources/demo1.xml</config>
 		<config>src/test/resources/demo2.xml</config>
 		<config>src/test/resources/demo3.xml</config>
+		<config>src/main/resources/ui.xml</config>
 	</configs>
 	<autoconfigs>
 	</autoconfigs>

@@ -32,6 +32,6 @@ public class DirectoryServiceTest {
 
 	@Test
 	public void testGetMappingConfigurationDirectory() {
-		System.out.println(this.directoryService.getMappingConfigurationDirectory());
+		System.out.println(this.directoryService.getMappingConfigurationFile());
 	}
 }

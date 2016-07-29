@@ -18,14 +18,14 @@ public class DirectoryServiceImpl implements DirectoryService {
 	private String sourceDirectory;
 	@Value("#{locations.target}")
 	private String targetDirectory;
-	@Value("#{locations.mappingConfiguration}")
-	private String mappingConfigurationDirectory;
+	@Value("#{locations.mappingConfigurationFile}")
+	private String mappingConfigurationFile;
 
 	@Value("#{locations}")
 	public void setLocationsConfiguration(Properties locations){
 		this.sourceDirectory = locations.getProperty("source");
 		this.targetDirectory = locations.getProperty("target");
-		this.mappingConfigurationDirectory = locations.getProperty("mappingConfiguration");
+		this.mappingConfigurationFile = locations.getProperty("mappingConfigurationFile");
 	}
 
 //	@ConstructorProperties({"sourceDirectory", "targetDiractory", "mappingConfigurationDirectory"})
@@ -35,24 +35,30 @@ public class DirectoryServiceImpl implements DirectoryService {
 //		this.mappingConfigurationDirectory = mappingConfigurationDirectory;
 //	}
 
+	@Override
 	public String getSourceDirectory() {
 		return this.sourceDirectory;
 	}
+	@Override
 	public void setSourceDirectory(String sourceDirectory) {
 		this.sourceDirectory = sourceDirectory;
 	}
 
+	@Override
 	public void setTargetDiractory(String targetDirectory) {
 		this.targetDirectory = targetDirectory;
 	}
+	@Override
 	public String getTargetDirectory() {
 		return this.targetDirectory;
 	}
 
-	public void setMappingConfigurationDirectory(String mappingConfigurationDirectory) {
-		this.mappingConfigurationDirectory = mappingConfigurationDirectory;
+	@Override
+	public void setMappingConfigurationFile(String mappingConfigurationFile) {
+		this.mappingConfigurationFile = mappingConfigurationFile;
 	}
-	public String getMappingConfigurationDirectory() {
-		return this.mappingConfigurationDirectory;
+	@Override
+	public String getMappingConfigurationFile() {
+		return this.mappingConfigurationFile;
 	}
 }

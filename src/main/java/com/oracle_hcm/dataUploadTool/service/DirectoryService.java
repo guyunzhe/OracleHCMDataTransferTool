@@ -8,6 +8,6 @@ public interface DirectoryService {
 	void setTargetDiractory(String targetDirectory);
 	String getTargetDirectory();
 
-	void setMappingConfigurationDirectory(String mappingConfigurationDirectory);
-	String getMappingConfigurationDirectory();
+	void setMappingConfigurationFile(String mappingConfigurationFile);
+	String getMappingConfigurationFile();
 }

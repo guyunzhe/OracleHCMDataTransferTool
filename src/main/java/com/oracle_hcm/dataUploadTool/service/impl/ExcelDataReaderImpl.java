@@ -164,7 +164,7 @@ public class ExcelDataReaderImpl implements ExcelDataReader {
 		switch (cell.getCellType()) {
 		case Cell.CELL_TYPE_NUMERIC:
 			if(HSSFDateUtil.isCellDateFormatted(cell)) {
-				SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+				SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy/MM/dd");
 				String formattedDate = simpleDateFormat.format(cell.getDateCellValue());
 				logger.info(String.format("Cell Index:%d Cell value:%s", 
 						cell.getColumnIndex(), formattedDate));

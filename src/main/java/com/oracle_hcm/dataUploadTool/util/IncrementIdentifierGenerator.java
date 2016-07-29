@@ -1,13 +1,28 @@
 package com.oracle_hcm.dataUploadTool.util;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 @Component
 public class IncrementIdentifierGenerator {
 
+	private Map<String, List<String>> generatedIdentifiers = new HashMap<String, List<String>>();
+
+	//The start index
 	private int start;
+
+	//The discrepancy between keys
 	private int step;
+
+	//index = previous index + step
 	private int index;
+
+	//component name || other string
 	private String prefix;
 
 	public int getStart() {
@@ -40,6 +55,7 @@ public class IncrementIdentifierGenerator {
 
 	public void setPrefix(String prefix) {
 		this.prefix = prefix;
+		initializeIdentifierMap(prefix);
 	}
 
 	public IncrementIdentifierGenerator(int start, int step) {
@@ -48,25 +64,38 @@ public class IncrementIdentifierGenerator {
 		initializeIndex();
 	}
 
-	public IncrementIdentifierGenerator() {
-		initializeIndex();
-	}
+	public IncrementIdentifierGenerator() { }
 
 	public IncrementIdentifierGenerator(int start, int step, String prefix) {
 		this.start = start;
 		this.step = step;
 		this.prefix = prefix;
 		initializeIndex();
+		initializeIdentifierMap(prefix);
 	}
 
+	/**
+	 * Generate the incremented key every time the method is invoked
+	 * */
 	public String generateIdentifier() {
+		if(StringUtils.isEmpty(this.prefix)) {
+			throw new RuntimeException("No prefix for generating the source key");
+		}
+
 		this.index += this.step;
 		String identifier = this.prefix + Integer.toString(this.index);
 
 		return identifier;
 	}
 
+	/**
+	 * Initialize <code>index</code> to <code>start</code> value
+	 * */
 	public void initializeIndex() {
 		this.index = this.start;
+	}
+
+	private void initializeIdentifierMap(String prefix) {
+		this.generatedIdentifiers.put(prefix, new ArrayList<String>());
 	}
 }
